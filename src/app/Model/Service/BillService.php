@@ -9,6 +9,7 @@ use App\Model\Entity\Bill\Bill;
 use App\Model\Entity\Bill\Customer;
 use App\Model\Entity\Bill\Position;
 use App\Model\Entity\Bill\PurchasePosition;
+use App\Model\Entity\Report\Report;
 use App\Model\Exceptions\ValidationViolation;
 use App\Model\Validation\Rule\QuantityRequirement;
 use App\Model\Validation\Rule\SerialNumberRequirement;
@@ -63,6 +64,28 @@ class BillService
         $store->addBill($bill);
 
         return $bill;
+    }
+
+    public function report(
+        Store $store, DateTimeInterface $begin, DateTimeInterface $end
+    ): Report
+    {
+        $bills = $this->billRepository->getAllBillsInPeriodByStore(
+            $store,
+            $begin,
+            $end
+        );
+        $report = new Report();
+        foreach ($bills as $bill) {
+            foreach ($bill->getPositions() as $position) {
+                $report->addRowOrQuantityIfExist(
+                    $position->getProduct(),
+                    $position->getQuantity()
+                );
+            }
+        }
+
+        return $report;
     }
 
     private function getNewIdForBill(Store $store, DateTimeInterface $date): int

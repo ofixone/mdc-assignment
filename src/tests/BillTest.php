@@ -14,22 +14,90 @@ class BillTest extends TestCase
     /** @var StoreContract[] */
     private array $storeChain = [];
 
-    public function testCreateBillSuccessfully()
+    protected function setUp(): void
     {
-        $shop = $this->storeChain[Store\CornerShop::TYPE];
-        $position = $shop->getPositionByName('Marlboro');
+        parent::setUp();
 
-        $bill = $this->factoryBill($shop, new DateTimeImmutable(), [
-            ['position' => $position, 'quantity' => 1]
-        ]);
+        $this->faker = Faker\Factory::create();
+        $this->billService = $this->app->make(BillService::class);
 
-        $this->assertNotNull($bill);
+        $cornerShop = new Store\CornerShop($this->faker->company);
+        $pharmacyShop = new Store\Pharmacy($this->faker->company);
+        $supermarketShop = new Store\Supermarket($this->faker->company);
+        $cornerAssortment = [
+            'Marlboro' => new Store\Assortment\Position(
+                new Store\Assortment\Product(
+                    Store\Assortment\Product::TYPE_CIGARETTE,
+                    'Marlboro'
+                ), 250, 10
+            ),
+            'Tuna' => new Store\Assortment\Position(
+                new Store\Assortment\Product(
+                    Store\Assortment\Product::TYPE_FOOD,
+                    'Tuna'
+                ), 100, 5
+            ),
+            'Cola' => new Store\Assortment\Position(
+                new Store\Assortment\Product(
+                    Store\Assortment\Product::TYPE_FOOD,
+                    'Cola'
+                ), 20, 500
+            ),
+        ];
+        $pharmacyAssortment = [
+            'Oxycodone' => new Store\Assortment\Position(
+                new Store\Assortment\Product(
+                    Store\Assortment\Product::TYPE_MEDICINE,
+                    'Oxycodone'
+                ), 2000, 5
+            ),
+            'Oxytetracycline' => new Store\Assortment\Position(
+                new Store\Assortment\Product(
+                    Store\Assortment\Product::TYPE_MEDICINE,
+                    'Oxytetracycline'
+                ), 1000, 15
+            ),
+            'Gratty' => new Store\Assortment\Position(
+                new Store\Assortment\Product(
+                    Store\Assortment\Product::TYPE_TOY,
+                    'Gratty'
+                ), 1500, 10
+            ),
+        ];
+        $supermarketAssortment = [
+            'Aroma' => new Store\Assortment\Position(
+                new Store\Assortment\Product(
+                    Store\Assortment\Product::TYPE_CIGARETTE,
+                    'Aroma'
+                ), 300, 10
+            ),
+            'Aware ticket' => new Store\Assortment\Position(
+                new Store\Assortment\Product(
+                    Store\Assortment\Product::TYPE_PARKING_TICKET,
+                    'Aware ticket'
+                ), 10, 100
+            ),
+            'Barbie' => new Store\Assortment\Position(
+                new Store\Assortment\Product(
+                    Store\Assortment\Product::TYPE_TOY,
+                    'Barbie'
+                ), 1000, 10
+            ),
+        ];
+        $cornerShop->setAssortment($cornerAssortment);
+        $pharmacyShop->setAssortment($pharmacyAssortment);
+        $supermarketShop->setAssortment($supermarketAssortment);
+        $this->storeChain = [
+            Store\CornerShop::TYPE => $cornerShop,
+            Store\Pharmacy::TYPE => $pharmacyShop,
+            Store\Supermarket::TYPE => $supermarketShop
+        ];
     }
 
     /**
      * @param StoreContract $store
      * @param DateTimeInterface $date
-     * @param array{position: Store\Assortment\Position, quantity: int} $positions
+     * @param array{position: Store\Assortment\Position, quantity: int, serialNumber: string|null} $positions
      * @return Bill\Bill|null
      */
     private function factoryBill(
@@ -40,7 +108,8 @@ class BillTest extends TestCase
         foreach ($positions as $item) {
             $purchasePositions[] = new Bill\PurchasePosition(
                 $item['position'],
-                $item['quantity']
+                $item['quantity'],
+                $item['serialNumber'] ?? null
             );
         }
 
@@ -54,6 +123,18 @@ class BillTest extends TestCase
             ),
             $purchasePositions
         );
+    }
+
+    public function testCreateBillSuccessfully()
+    {
+        $shop = $this->storeChain[Store\CornerShop::TYPE];
+        $position = $shop->getPositionByName('Marlboro');
+
+        $bill = $this->factoryBill($shop, new DateTimeImmutable(), [
+            ['position' => $position, 'quantity' => 1]
+        ]);
+
+        $this->assertNotNull($bill);
     }
 
     public function testCreateBillSuccessfullyInNextYear()
@@ -135,83 +216,34 @@ class BillTest extends TestCase
         ]);
     }
 
-    protected function setUp(): void
+    public function testReport()
     {
-        parent::setUp();
+        $shop1 = $this->storeChain[Store\Supermarket::TYPE];
+        $shop1position = $shop1->getPositionByName('Barbie');
+        $shop1position2 = $shop1->getPositionByName('Aware ticket');
+        $this->factoryBill($shop1, new DateTimeImmutable(), [
+            ['position' => $shop1position, 'quantity' => 2],
+            [
+                'position' => $shop1position2,
+                'quantity' => 1,
+                'serialNumber' => uniqid()
+            ],
+        ]);
+        $this->factoryBill($shop1, new DateTimeImmutable(), [
+            ['position' => $shop1position, 'quantity' => 2],
+            [
+                'position' => $shop1position2,
+                'quantity' => 20,
+                'serialNumber' => uniqid()
+            ],
+        ]);
 
-        $this->faker = Faker\Factory::create();
-        $this->billService = $this->app->make(BillService::class);
-
-        $cornerShop = new Store\CornerShop($this->faker->company);
-        $pharmacyShop = new Store\Pharmacy($this->faker->company);
-        $supermarketShop = new Store\Supermarket($this->faker->company);
-        $cornerAssortment = [
-            'Marlboro' => new Store\Assortment\Position(
-                new Store\Assortment\Product(
-                    Store\Assortment\Product::TYPE_CIGARETTE,
-                    'Marlboro'
-                ), 250, 10
-            ),
-            'Tuna' => new Store\Assortment\Position(
-                new Store\Assortment\Product(
-                    Store\Assortment\Product::TYPE_FOOD,
-                    'Tuna'
-                ), 100, 5
-            ),
-            'Cola' => new Store\Assortment\Position(
-                new Store\Assortment\Product(
-                    Store\Assortment\Product::TYPE_FOOD,
-                    'Cola'
-                ), 20, 500
-            ),
-        ];
-        $pharmacyAssortment = [
-            'Oxycodone' => new Store\Assortment\Position(
-                new Store\Assortment\Product(
-                    Store\Assortment\Product::TYPE_MEDICINE,
-                    'Oxycodone'
-                ), 2000, 5
-            ),
-            'Oxytetracycline' => new Store\Assortment\Position(
-                new Store\Assortment\Product(
-                    Store\Assortment\Product::TYPE_FOOD,
-                    'Oxytetracycline'
-                ), 1000, 15
-            ),
-            'Gratty' => new Store\Assortment\Position(
-                new Store\Assortment\Product(
-                    Store\Assortment\Product::TYPE_TOY,
-                    'Gratty'
-                ), 1500, 10
-            ),
-        ];
-        $supermarketAssortment = [
-            'Aroma' => new Store\Assortment\Position(
-                new Store\Assortment\Product(
-                    Store\Assortment\Product::TYPE_CIGARETTE,
-                    'Aroma'
-                ), 300, 10
-            ),
-            'Aware ticket' => new Store\Assortment\Position(
-                new Store\Assortment\Product(
-                    Store\Assortment\Product::TYPE_PARKING_TICKET,
-                    'Aware ticket'
-                ), 10, 100
-            ),
-            'Barbie' => new Store\Assortment\Position(
-                new Store\Assortment\Product(
-                    Store\Assortment\Product::TYPE_TOY,
-                    'Barbie'
-                ), 1000, 10
-            ),
-        ];
-        $cornerShop->setAssortment($cornerAssortment);
-        $pharmacyShop->setAssortment($pharmacyAssortment);
-        $supermarketShop->setAssortment($supermarketAssortment);
-        $this->storeChain = [
-            Store\CornerShop::TYPE => $cornerShop,
-            Store\Pharmacy::TYPE => $pharmacyShop,
-            Store\Supermarket::TYPE => $supermarketAssortment
-        ];
+        $report = $this->billService->report(
+            $shop1,
+            new DateTimeImmutable('today'),
+            new DateTimeImmutable('tomorrow')
+        );
+        $this->assertEquals(4, $report->getRowByProductName('Barbie')->getQuantity());
+        $this->assertEquals(21, $report->getRowByProductName('Aware ticket')->getQuantity());
     }
 }

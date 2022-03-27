@@ -4,6 +4,7 @@ namespace App\Model\Repository;
 
 use App\Model\Contract\Store;
 use App\Model\Entity\Bill\Bill;
+use DateTimeInterface;
 
 class BillRepository implements \App\Model\Contract\Repository\BillRepository
 {
@@ -25,5 +26,21 @@ class BillRepository implements \App\Model\Contract\Repository\BillRepository
         }
 
         return $lastBillByYear;
+    }
+
+    /* @inheritDoc */
+    public function getAllBillsInPeriodByStore(
+        Store $store, DateTimeInterface $begin, DateTimeInterface $end
+    ): array
+    {
+        $suitableBills = [];
+
+        foreach ($store->getBills() as $bill) {
+            if ($bill->getDate() >= $begin && $bill->getDate() <= $end) {
+                $suitableBills[] = $bill;
+            }
+        }
+
+        return $suitableBills;
     }
 }

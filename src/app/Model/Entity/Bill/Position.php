@@ -8,6 +8,7 @@ class Position
 {
     private int $quantity;
     private int $price;
+    //TODO: Any of pack must have own serial number or common?
     private ?string $serialNumber;
     private Product $product;
 
