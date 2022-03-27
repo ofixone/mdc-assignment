@@ -20,6 +20,11 @@ Jump into ``bash``:
 docker-compose exec app bash
 ```
 Or using php 7.4 directly :)
+
+Run composer
+```bash
+composer install
+```
 And run following ``phpunit`` exec:
 ```bash
 php vendor/bin/phpunit --testdox
