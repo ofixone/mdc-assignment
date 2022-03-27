@@ -66,6 +66,4 @@ class Bill
         }
         $this->positions[] = $position;
     }
-
-
 }

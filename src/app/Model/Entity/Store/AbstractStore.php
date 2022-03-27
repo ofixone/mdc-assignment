@@ -3,6 +3,7 @@
 namespace App\Model\Entity\Store;
 
 use App\Model\Contract\Store;
+use App\Model\Entity\Bill\Bill;
 use App\Model\Entity\Store\Assortment\Position;
 use App\Model\Exceptions\NonUniquePosition;
 
@@ -12,6 +13,9 @@ abstract class AbstractStore implements Store
 
     /* @var Position[] */
     private array $positions = [];
+
+    /* @var Bill[] */
+    private array $bills = [];
 
     public function __construct(string $name)
     {
@@ -49,5 +53,26 @@ abstract class AbstractStore implements Store
             }
         }
         $this->positions[] = $position;
+    }
+
+    public function addBill(Bill $bill): void
+    {
+        $this->bills[] = $bill;
+    }
+
+    public function getBills(): array
+    {
+        return $this->bills;
+    }
+
+    public function getPositionByName(string $name): ?Position
+    {
+        foreach ($this->positions as $position) {
+            if ($position->getProduct()->getName() === $name) {
+                return $position;
+            }
+        }
+
+        return null;
     }
 }

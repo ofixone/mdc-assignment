@@ -4,7 +4,7 @@ use App\Model\Contract\Validation\Validator;
 use App\Model\Entity\Store;
 use App\Model\Validation\Rule;
 
-class ValidationTest extends TestCase
+class StoreTest extends TestCase
 {
     private Validator $validator;
     private \Faker\Generator $faker;
