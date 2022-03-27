@@ -23,5 +23,6 @@ $app->singleton(
 );
 
 $app->configure('app');
+$app->register(App\Providers\AppServiceProvider::class);
 
 return $app;
