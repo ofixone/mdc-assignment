@@ -38,6 +38,7 @@ class Bill
         return $this->customer;
     }
 
+    /* @return Position[] $positions */
     public function getPositions(): array
     {
         return $this->positions;
